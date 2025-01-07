@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if ! command -v curl &> /dev/null; then
+if !command -v curl &> /dev/null; then
     echo "curl is required but not installed"
     exit 1
 fi
