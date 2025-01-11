@@ -101,9 +101,14 @@ chown -R "$SUDO_USER:$SUDO_USER" "/home/$SUDO_USER/.ssh"
 
 # Disable password authentication
 echo "Disabling SSH password authentication..."
-if ! cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup; then
-    echo "Error: Failed to create sshd_config backup"
-    exit 1
+if [ ! -f /etc/ssh/sshd_config.backup ]; then
+    if ! cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup; then
+        echo "Error: Failed to create sshd_config backup"
+        exit 1
+    fi
+    echo "Created backup of /etc/ssh/sshd_config"
+else
+    echo "Backup of /etc/ssh/sshd_config already exists, skipping backup creation"
 fi
 sed -i '/^#*PasswordAuthentication/c\PasswordAuthentication no' /etc/ssh/sshd_config
 if ! grep -q "^PasswordAuthentication no" /etc/ssh/sshd_config; then
@@ -139,9 +144,14 @@ chown "$SUDO_USER:$SUDO_USER" "${MOUNT_POINT}"
 
 # Add fstab entry
 echo "Adding fstab entry..."
-if ! cp /etc/fstab /etc/fstab.backup; then
-    echo "Error: Failed to create fstab backup"
-    exit 1
+if [ ! -f /etc/fstab.backup ]; then
+    if ! cp /etc/fstab /etc/fstab.backup; then
+        echo "Error: Failed to create fstab backup"
+        exit 1
+    fi
+    echo "Created backup of /etc/fstab"
+else
+    echo "Backup of /etc/fstab already exists, skipping backup creation"
 fi
 FSTAB_ENTRY="//${SMB_SERVER}/${SMB_SHARE} ${MOUNT_POINT} cifs credentials=$CREDS_FILE,uid=1000,gid=1000,iocharset=utf8,file_mode=0777,dir_mode=0777,nobrl,mfsymlinks 0 0"
 echo "$FSTAB_ENTRY" >> /etc/fstab
