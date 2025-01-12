@@ -99,8 +99,8 @@ fi
 chmod 600 "/home/$SUDO_USER/.ssh/authorized_keys"
 chown -R "$SUDO_USER:$SUDO_USER" "/home/$SUDO_USER/.ssh"
 
-# Disable password authentication
-echo "Disabling SSH password authentication..."
+# Configure SSH
+echo "Configuring SSH..."
 if [ ! -f /etc/ssh/sshd_config.backup ]; then
     if ! cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup; then
         echo "Error: Failed to create sshd_config backup"
@@ -110,9 +110,33 @@ if [ ! -f /etc/ssh/sshd_config.backup ]; then
 else
     echo "Backup of /etc/ssh/sshd_config already exists, skipping backup creation"
 fi
+# Disable ipv6
+sed -i '/^#*AddressFamily/c\AddressFamily inet' /etc/ssh/sshd_config
+if ! grep -q "^AddressFamily inet" /etc/ssh/sshd_config; then
+    echo "AddressFamily inet" >> /etc/ssh/sshd_config
+fi
+# Disable password authentication
 sed -i '/^#*PasswordAuthentication/c\PasswordAuthentication no' /etc/ssh/sshd_config
 if ! grep -q "^PasswordAuthentication no" /etc/ssh/sshd_config; then
     echo "PasswordAuthentication no" >> /etc/ssh/sshd_config
+fi
+sed -i '/^#*ChallengeResponseAuthentication/c\ChallengeResponseAuthentication no' /etc/ssh/sshd_config
+if ! grep -q "^ChallengeResponseAuthentication no" /etc/ssh/sshd_config; then
+    echo "ChallengeResponseAuthentication no" >> /etc/ssh/sshd_config
+fi
+sed -i '/^#*KbdInteractiveAuthentication/c\KbdInteractiveAuthentication no' /etc/ssh/sshd_config
+if ! grep -q "^KbdInteractiveAuthentication no" /etc/ssh/sshd_config; then
+    echo "KbdInteractiveAuthentication no" >> /etc/ssh/sshd_config
+fi
+# Disable root login
+sed -i '/^#*PermitRootLogin/c\PermitRootLogin no' /etc/ssh/sshd_config
+if ! grep -q "^PermitRootLogin no" /etc/ssh/sshd_config; then
+    echo "PermitRootLogin no" >> /etc/ssh/sshd_config
+fi
+# Make sure key authentication is enabled
+sed -i '/^#*PubkeyAuthentication/c\PubkeyAuthentication yes' /etc/ssh/sshd_config
+if ! grep -q "^PubkeyAuthentication yes" /etc/ssh/sshd_config; then
+    echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
 fi
 systemctl restart sshd
 
@@ -154,7 +178,12 @@ else
     echo "Backup of /etc/fstab already exists, skipping backup creation"
 fi
 FSTAB_ENTRY="//${SMB_SERVER}/${SMB_SHARE} ${MOUNT_POINT} cifs credentials=$CREDS_FILE,uid=1000,gid=1000,iocharset=utf8,file_mode=0777,dir_mode=0777,nobrl,mfsymlinks 0 0"
-echo "$FSTAB_ENTRY" >> /etc/fstab
+if grep -q "${SMB_SERVER}/${SMB_SHARE}" /etc/fstab; then
+    echo "SMB mount entry already exists in fstab, skipping..."
+else
+    echo "$FSTAB_ENTRY" >> /etc/fstab
+    echo "Added new fstab entry"
+fi
 
 # Test mount
 echo "Testing mount..."
