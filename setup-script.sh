@@ -182,7 +182,6 @@ if grep -q "${SMB_SERVER}/${SMB_SHARE}" /etc/fstab; then
     echo "SMB mount entry already exists in fstab, skipping..."
 else
     echo "$FSTAB_ENTRY" >> /etc/fstab
-    echo "Added new fstab entry"
 fi
 
 # Test mount
